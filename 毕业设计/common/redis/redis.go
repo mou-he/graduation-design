@@ -42,6 +42,7 @@ func SetCaptchaForEmail(email, captcha string) error {
 
 // 检查验证码是否匹配
 func CheckCaptchaForEmail(email, userInput string) (bool, error) {
+	// 生成验证码的key
 	key := GenerateCaptcha(email)
 	storedCaptcha, err := Rdb.Get(ctx, key).Result()
 	if err != nil {

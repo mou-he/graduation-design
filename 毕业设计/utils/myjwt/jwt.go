@@ -28,7 +28,7 @@ func GenerateToken(id int64, username string) (string, error) {
 		},
 	}
 	// 生成token
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// 签名token
 	return token.SignedString([]byte(config.GetConfig().Key))
 }
