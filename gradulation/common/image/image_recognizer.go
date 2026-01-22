@@ -2,7 +2,9 @@ package image
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -11,6 +13,7 @@ import (
 	"sync"
 
 	ort "github.com/yalue/onnxruntime_go"
+	"golang.org/x/image/draw"
 )
 
 type ImageRecognizer struct {
@@ -42,7 +45,7 @@ func NewImageRecognizer(modelPath string, labelPath string, inputHeight, inputWe
 	}
 	// 初始化ONNX环境
 	initOnce.Do(func() {
-		initErr = ort.InitGlobalSessionEnvironment()
+		initErr = ort.InitializeEnvironment()
 	})
 	if initErr != nil {
 		return nil, fmt.Errorf("init onnx environment failed: %v", initErr)
@@ -93,7 +96,93 @@ func NewImageRecognizer(modelPath string, labelPath string, inputHeight, inputWe
 	}, nil
 
 }
+func (r ImageRecognizer) Close() {
+	if r.session != nil {
+		_ = r.session.Destroy()
+		r.session = nil
+	}
+	if r.inputTensor != nil {
+		_ = r.inputTensor.Destroy()
+		r.inputTensor = nil
+	}
+	if r.outputTensor != nil {
+		_ = r.outputTensor.Destroy()
+		r.outputTensor = nil
+	}
+}
+func (r *ImageRecognizer) PredictFromFile(imagePath string) (string, error) {
+	file, err := os.Open(filepath.Clean(imagePath))
+	if err != nil {
+		return "", fmt.Errorf("open image file failed: %v", err)
+	}
+	defer file.Close()
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return "", fmt.Errorf("decode image failed: %v", err)
+	}
+	return r.PredictFromImage(img)
+}
+func (r *ImageRecognizer) PredictFromBuffer(buf []byte) (string, error) {
+	img, _, err := image.Decode(bytes.NewReader(buf))
+	if err != nil {
+		return "", fmt.Errorf("decode image failed: %v", err)
+	}
+	return r.PredictFromImage(img)
+}
+func (r *ImageRecognizer) PredictFromImage(img image.Image) (string, error) {
+	// 调整图像大小
+	resizedImg := image.NewRGBA(image.Rect(0, 0, r.inputWidth, r.inputHeight))
+	// 调整图像大小
+	draw.CatmullRom.Scale(resizedImg, resizedImg.Bounds(), img, img.Bounds(), draw.Over, nil)
+	// 转化为模型输入
+	h, w := r.inputHeight, r.inputWidth
+	ch := 3 // R, G, B
+	data := make([]float32, h*w*ch)
 
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			// 获取像素值
+			c := resizedImg.At(x, y)
+			// 归一化
+			r, g, b, _ := c.RGBA()
+			// 归一化到[0, 1]
+			rf := float32(r>>8) / 255.0
+			// 归一化到[0, 1]
+			gf := float32(g>>8) / 255.0
+			// 归一化到[0, 1]
+			bf := float32(b>>8) / 255.0
+
+			//R通道
+			data[y*w+x] = rf
+			// G通道
+			data[h*w+y*w+x] = gf
+			// B通道
+			data[2*h*w+y*w+x] = bf
+		}
+	}
+	inData := r.inputTensor.GetData()
+	// 复制数据到输入张量
+	copy(inData, data)
+	if err := r.session.Run(); err != nil {
+		return "", fmt.Errorf("run session failed: %v", err)
+	}
+	outData := r.outputTensor.GetData()
+	if len(outData) == 0 {
+		return "", fmt.Errorf("output tensor is empty")
+	}
+	maxIdx := 0
+	maxVal := outData[0]
+	for i := 1; i < len(outData); i++ {
+		if outData[i] > maxVal {
+			maxVal = outData[i]
+			maxIdx = i
+		}
+	}
+	if maxIdx >= 0 && maxIdx < len(r.labels) {
+		return r.labels[maxIdx], nil
+	}
+	return "unknown", nil
+}
 func loadLabels(labelPath string) ([]string, error) {
 	// 读取Label文件
 	f, err := os.Open(filepath.Clean(labelPath))

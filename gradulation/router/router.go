@@ -11,11 +11,16 @@ func InitRouter() *gin.Engine {
 	{
 		RegisterUserRouter(enterRouter.Group("/user"))
 	}
-	enterRouter.Use(jwt.Auth())
 	{
 		AIGroup := enterRouter.Group("/AI")
 		AIGroup.Use(jwt.Auth())
 		AIRouter(AIGroup)
 	}
+	{
+		ImageGroup := enterRouter.Group("/image")
+		ImageGroup.Use(jwt.Auth())
+		ImageRouter(ImageGroup)
+	}
+
 	return r
 }
