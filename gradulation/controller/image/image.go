@@ -12,7 +12,7 @@ import (
 
 type (
 	RecognizeImageRes struct {
-		ClassName string `json:"className"`
+		ClassName string `json:"class_name,omitempty"`
 		controller.Response
 	}
 )
@@ -26,6 +26,7 @@ func RecognizeImage(c *gin.Context) {
 		return
 	}
 	className, err := image.RecognizeImage(file)
+	log.Printf("className: %s", className)
 	if err != nil {
 		log.Println("RecognizeImage fail : ", err)
 		c.JSON(http.StatusOK, res.CodeOf(code.CodeServerBusy))

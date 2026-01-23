@@ -8,6 +8,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -178,9 +179,13 @@ func (r *ImageRecognizer) PredictFromImage(img image.Image) (string, error) {
 			maxIdx = i
 		}
 	}
+	log.Printf("maxIdx: %d, maxVal: %f", maxIdx, maxVal)
+	log.Printf("labels len: %d", len(r.labels))
+	log.Printf("labels: %v", r.labels[maxIdx])
 	if maxIdx >= 0 && maxIdx < len(r.labels) {
 		return r.labels[maxIdx], nil
 	}
+
 	return "unknown", nil
 }
 func loadLabels(labelPath string) ([]string, error) {
@@ -195,7 +200,7 @@ func loadLabels(labelPath string) ([]string, error) {
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		line := sc.Text()
-		if line == "" {
+		if line != "" {
 			labels = append(labels, line)
 		}
 	}

@@ -6,5 +6,5 @@ import (
 )
 
 func ImageRouter(r *gin.RouterGroup) {
-	r.POST("/image/recognize", image.RecognizeImage)
+	r.POST("/recognize", image.RecognizeImage)
 }

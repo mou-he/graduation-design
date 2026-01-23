@@ -1,16 +1,18 @@
 package image
 
 import (
-	"github.com/mou-he/graduation-design/common/image"
 	"io"
 	"log"
 	"mime/multipart"
+	"path/filepath"
+
+	"github.com/mou-he/graduation-design/common/image"
 )
 
 func RecognizeImage(file *multipart.FileHeader) (string, error) {
 
-	modelPath := "../common/onnxmodel/mobilenetv2-7.onnx"
-	labelPath := "../common/onnxmodel/imagenet_classes.txt"
+	modelPath := filepath.Join("common", "onnxmodel", "mobilenetv2-7.onnx")
+	labelPath := filepath.Join("common", "onnxmodel", "imagenet_classes.txt")
 	inputH, inputW := 224, 224
 
 	recognizer, err := image.NewImageRecognizer(modelPath, labelPath, inputH, inputW)
