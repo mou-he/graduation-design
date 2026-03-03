@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/mou-he/graduation-design/common/aihelper"
 	"github.com/mou-he/graduation-design/common/mysql"
@@ -31,7 +32,7 @@ func readDataFromDB() error {
 		modelType := "1"
 		config := make(map[string]interface{})
 		// 创建对应的AIhelper
-		helper, err := manager.GetOrCreateAIHelper(modelType, m.Content, m.UserName, config)
+		helper, err := manager.GetOrCreateAIHelper(m.UserName, m.SessionID, modelType, config)
 		if err != nil {
 			log.Printf("[readDataFromDB] failed to create helper for user=%s session=%s: %v", m.UserName, m.SessionID, err)
 			continue
@@ -45,6 +46,11 @@ func readDataFromDB() error {
 }
 
 func main() {
+	os.Setenv("ZHIPU_API_KEY", "602358133cad480da7d43d4d0e5a3b0f.vMxr0PqkWmXAL2FT")
+	os.Setenv("RAG_API_KEY", "sk-97ffa234a0724d1190c5dae2a6b287ec")
+	os.Setenv("OPENAI_API_KEY", "sk-6e277f0001ca4714b3f96125b5e3910c")
+	os.Setenv("OPENAI_MODEL_NAME", "qwen-plus")
+	os.Setenv("OPENAI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 	conf := config.GetConfig()
 	host := conf.MainConfig.Host
 	port := conf.MainConfig.Port

@@ -150,7 +150,7 @@ export default {
 .image-recognition-container {
   height: 100vh;
   display: flex;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #e0f0ff 0%, #b8d8ff 100%);
   position: relative;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
@@ -182,8 +182,8 @@ export default {
   flex-direction: column;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(15px);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(173, 216, 230, 0.3);
+  box-shadow: 2px 0 20px rgba(173, 216, 230, 0.15);
   position: relative;
   z-index: 2;
 }
@@ -192,8 +192,8 @@ export default {
   padding: 20px;
   text-align: center;
   font-weight: 600;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(103, 194, 58, 0.06) 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, rgba(173, 216, 230, 0.1) 0%, rgba(135, 206, 235, 0.1) 100%);
+  border-bottom: 1px solid rgba(173, 216, 230, 0.2);
 }
 
 .session-list-ul {
@@ -207,17 +207,17 @@ export default {
 .session-item {
   padding: 15px 20px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(173, 216, 230, 0.1);
   transition: all 0.2s ease;
   position: relative;
   color: #2c3e50;
 }
 
 .session-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #87ceeb 0%, #4fc3f7 100%);
   color: white;
   font-weight: 600;
-  box-shadow: inset 0 0 20px rgba(102, 126, 234, 0.2);
+  box-shadow: inset 0 0 20px rgba(135, 206, 235, 0.2);
 }
 
 /* chat section */
@@ -239,27 +239,27 @@ export default {
   display: flex;
   align-items: center;
   padding: 12px 24px;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 14px rgba(173, 216, 230, 0.1);
+  border-bottom: 1px solid rgba(173, 216, 230, 0.2);
   gap: 12px;
 }
 
 .back-btn {
   background: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(173, 216, 230, 0.2);
   color: #2c3e50;
   padding: 8px 14px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(173, 216, 230, 0.1);
 }
 
 .back-btn:hover {
   background: rgba(255, 255, 255, 0.32);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px rgba(173, 216, 230, 0.15);
 }
 
 .top-bar h2 {
@@ -285,7 +285,7 @@ export default {
   width: 8px;
 }
 .chat-messages::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.12);
+  background: rgba(135, 206, 235, 0.3);
   border-radius: 8px;
 }
 .chat-messages::-webkit-scrollbar-track {
@@ -317,9 +317,9 @@ export default {
 
 .user-message {
   align-self: flex-end;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #87ceeb 0%, #4fc3f7 100%);
   color: white;
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.16);
+  box-shadow: 0 6px 20px rgba(135, 206, 235, 0.16);
 }
 
 .user-message::after {
@@ -331,7 +331,7 @@ export default {
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 8px solid #764ba2;
+  border-top: 8px solid #4fc3f7;
 }
 
 .ai-message {
@@ -339,8 +339,8 @@ export default {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
   color: #2c3e50;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(173, 216, 230, 0.08);
+  border: 1px solid rgba(173, 216, 230, 0.2);
 }
 
 .ai-message::after {
@@ -377,7 +377,7 @@ export default {
   border-radius: 12px;
   display: block;
   margin-top: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(173, 216, 230, 0.2);
   transition: all 0.3s ease;
 }
 
@@ -390,7 +390,7 @@ export default {
   padding: 24px;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(173, 216, 230, 0.2);
   position: relative;
   z-index: 1;
 }
@@ -402,7 +402,7 @@ export default {
 
 .chat-input input[type="file"] {
   flex: 1;
-  border: 2px dashed #d9d9d9;
+  border: 2px dashed rgba(173, 216, 230, 0.3);
   border-radius: 12px;
   padding: 15px 20px;
   background: rgba(255, 255, 255, 0.8);
@@ -419,7 +419,7 @@ export default {
 
 .chat-input input[type="file"]::file-selector-button {
   border: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #87ceeb 0%, #4fc3f7 100%);
   padding: 8px 16px;
   border-radius: 8px;
   color: white;
@@ -427,34 +427,34 @@ export default {
   font-weight: 600;
   margin-right: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 10px rgba(135, 206, 235, 0.3);
 }
 
 .chat-input input[type="file"]::file-selector-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(135, 206, 235, 0.4);
 }
 
 .chat-input button {
   padding: 15px 30px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #87ceeb 0%, #4fc3f7 100%);
   color: white;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(135, 206, 235, 0.3);
 }
 
 .chat-input button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 25px rgba(135, 206, 235, 0.4);
 }
 
 .chat-input button:disabled {
-  background: #ccc;
+  background: #e0f0ff;
   box-shadow: none;
   cursor: not-allowed;
   transform: none;

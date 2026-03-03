@@ -2,14 +2,120 @@ package aihelper
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"sync"
 )
 
+var ctx = context.Background()
+
+// AIHelperManager AI助手管理器，管理用户-会话-AIHelper的映射关系
 type AIHelperManager struct {
-	helpers map[string]map[string]*AIHelper
+	helpers map[string]map[string]*AIHelper // map[用户账号（唯一）]map[会话ID]*AIHelper
 	mu      sync.RWMutex
 }
 
+// NewAIHelperManager 创建新的管理器实例
+func NewAIHelperManager() *AIHelperManager {
+	return &AIHelperManager{
+		helpers: make(map[string]map[string]*AIHelper),
+	}
+}
+
+// 获取或创建AIHelper
+func (m *AIHelperManager) GetOrCreateAIHelper(userName string, sessionID string, modelType string, config map[string]interface{}) (*AIHelper, error) {
+	// m.mu.Lock()
+	// defer m.mu.Unlock()
+
+	// // 获取用户的会话映射
+	// userHelpers, exists := m.helpers[userName]
+	// if !exists {
+	// 	userHelpers = make(map[string]*AIHelper)
+	// 	m.helpers[userName] = userHelpers
+	// }
+	// // 把这里注释是为了让每一次调用不改变
+	// // // 检查会话是否已存在
+	// // helper, exists := userHelpers[sessionID]
+	// // if exists {
+	// // 	return helper, nil
+	// // }
+
+	// // 创建新的AIHelper
+	// factory := GetGlobalFactory()
+	// helper, err := factory.CreateAIHelper(ctx, modelType, sessionID, config)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// userHelpers[sessionID] = helper
+	// return helper, nil
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	userHelpers, exists := m.helpers[userName]
+	if !exists {
+		userHelpers = make(map[string]*AIHelper)
+		m.helpers[userName] = userHelpers
+	}
+
+	helper, exists := userHelpers[sessionID]
+	if exists {
+		if helper.GetModelType() == modelType {
+			return helper, nil
+		}
+		// 模型类型变化，释放旧资源
+		if err := m.cleanupHelper(helper); err != nil {
+			fmt.Printf("清理旧助手失败: %v", err)
+		}
+		delete(userHelpers, sessionID)
+	}
+
+	factory := GetGlobalFactory()
+	newHelper, err := factory.CreateAIHelper(ctx, modelType, sessionID, config)
+	if err != nil {
+		return nil, err
+	}
+
+	userHelpers[sessionID] = newHelper
+	return newHelper, nil
+
+}
+
+// Cleaner 定义助手资源清理接口
+type Cleaner interface {
+	Close() error
+}
+
+func (m *AIHelperManager) cleanupHelper(helper *AIHelper) error {
+	// 检查助手是否实现了 Cleaner 接口
+	if cleaner, ok := helper.model.(Cleaner); ok {
+		if err := cleaner.Close(); err != nil {
+			log.Printf("清理助手资源失败: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *AIHelperManager) DeleteAIHelper(userName string, sessionID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	userHelpers, exists := m.helpers[userName]
+	if !exists {
+		return
+	}
+
+	delete(userHelpers, sessionID)
+
+	// 如果用户没有会话了，清理用户映射
+	if len(userHelpers) == 0 {
+		delete(m.helpers, userName)
+	}
+
+}
+
+// 获取指定用户的指定会话的AIHelper
 func (m *AIHelperManager) GetAIHelper(userName string, sessionID string) (*AIHelper, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -23,74 +129,48 @@ func (m *AIHelperManager) GetAIHelper(userName string, sessionID string) (*AIHel
 	return helper, exists
 }
 
-func NewAIHelperManager() *AIHelperManager {
-	return &AIHelperManager{
-		helpers: make(map[string]map[string]*AIHelper),
-	}
-}
-func (m *AIHelperManager) GetOrCreateAIHelper(userName, sessionID, modelType string, config map[string]interface{}) (*AIHelper, error) {
-	// 检查是否存在
-	// 加锁确保并发安全
+// 移除指定用户的指定会话的AIHelper
+func (m *AIHelperManager) RemoveAIHelper(userName string, sessionID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// 获取用户的会话映射
-	userHelpers, exists := m.helpers[userName]
-	if !exists {
-		userHelpers = make(map[string]*AIHelper)
-		m.helpers[userName] = userHelpers
-	}
-
-	// 检查会话是否已存在
-	helper, exists := userHelpers[sessionID]
-	if exists {
-		return helper, nil
-	}
-	if exists {
-		return helper, nil
-	}
-
-	// 创建新的AIHelper
-	// 获取全局工厂实例
-	factory := GetGlobalFactory()
-	aihelper, err := factory.CreateAIHelper(context.Background(), modelType, sessionID, config)
-	if err != nil {
-		return nil, err
-	}
-	helper = aihelper
-	m.helpers[userName][sessionID] = helper
-	return helper, nil
-}
-func (m *AIHelperManager) RemoveAIHelper(userName, sessionID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
 	userHelpers, exists := m.helpers[userName]
 	if !exists {
 		return
 	}
+
 	delete(userHelpers, sessionID)
-	// 如果用户没有会话了，清理用户的会话映射
+
+	// 如果用户没有会话了，清理用户映射
 	if len(userHelpers) == 0 {
 		delete(m.helpers, userName)
 	}
 }
+
+// 获取指定用户的所有会话ID
 func (m *AIHelperManager) GetUserSessions(userName string) []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	userHelpers, exists := m.helpers[userName]
 	if !exists {
-		return nil
+		return []string{}
 	}
-	sessions := make([]string, 0, len(userHelpers))
+
+	sessionIDs := make([]string, 0, len(userHelpers))
+	//取出所有的key
 	for sessionID := range userHelpers {
-		sessions = append(sessions, sessionID)
+		sessionIDs = append(sessionIDs, sessionID)
 	}
-	return sessions
+
+	return sessionIDs
 }
 
+// 全局管理器实例
 var globalManager *AIHelperManager
 var once sync.Once
 
+// GetGlobalManager 获取全局管理器实例
 func GetGlobalManager() *AIHelperManager {
 	once.Do(func() {
 		globalManager = NewAIHelperManager()

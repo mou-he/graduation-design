@@ -1,0 +1,9 @@
+docker run -d \
+  --name redis-stack-server \
+  -p 6379:6379 \
+  -v C:\Users\11395\Desktop\redisdata:/data \
+  redis/redis-stack-server:latest
+
+
+ai音乐
+  Tempo-87d9c85621030540f380330c007e6f9928g33

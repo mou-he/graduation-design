@@ -20,6 +20,21 @@
             <p>上传图片进行AI识别</p>
           </div>
         </el-card>
+        <el-card class="menu-item" @click="$router.push('/video-generation')">
+          <div class="card-content">
+            <el-icon size="48" color="#e6a23c"><VideoCamera /></el-icon>
+            <h3>AI视频生成</h3>
+            <p>文字描述生成短视频</p>
+          </div>
+        </el-card>
+         <el-card class="menu-item" @click="$router.push('/suggestion')">
+          <div class="card-content">
+            <!-- 需要在 script 中引入 Headset 图标 -->
+            <el-icon size="48" color="#f56c6c"><Headset /></el-icon>
+            <h3>建议反馈</h3>
+            <p>提交建议或反馈</p>
+            </div>
+          </el-card>
       </div>
     </el-main>
   </div>

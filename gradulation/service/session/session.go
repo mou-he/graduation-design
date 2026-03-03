@@ -4,67 +4,71 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/google/uuid"
 	"github.com/mou-he/graduation-design/common/aihelper"
 	"github.com/mou-he/graduation-design/common/code"
-	"github.com/mou-he/graduation-design/config"
 	"github.com/mou-he/graduation-design/dao/session"
 	"github.com/mou-he/graduation-design/model"
+
+	"github.com/google/uuid"
 )
 
 var ctx = context.Background()
 
-func GetUserSessionsByUserName(username string) ([]model.SessionInfo, error) {
-	// 获取用户所有的会话ID
+func GetUserSessionsByUserName(userName string) ([]model.SessionInfo, error) {
+	//获取用户的所有会话ID
+
 	manager := aihelper.GetGlobalManager()
-	Sessions := manager.GetUserSessions(username)
+	Sessions := manager.GetUserSessions(userName)
 
 	var SessionInfos []model.SessionInfo
+
 	for _, session := range Sessions {
 		SessionInfos = append(SessionInfos, model.SessionInfo{
 			SessionID: session,
 			Title:     session, // 暂时用sessionID作为标题，后续重构需要的时候可以更改
 		})
 	}
-	// 返回会话信息列表
+
 	return SessionInfos, nil
 }
 
 func CreateSessionAndSendMessage(userName string, userQuestion string, modelType string) (string, string, code.Code) {
-	// 创建新会话
+	//1：创建一个新的会话
 	newSession := &model.Session{
 		ID:       uuid.New().String(),
 		UserName: userName,
-		Title:    userQuestion,
+		Title:    userQuestion, // 可以根据需求设置标题，这边暂时用用户第一次的问题作为标题
 	}
-
-	createSession, err := session.CreateSession(newSession)
+	createdSession, err := session.CreateSession(newSession)
 	if err != nil {
+		log.Println("CreateSessionAndSendMessage CreateSession error:", err)
 		return "", "", code.CodeServerBusy
 	}
-	// 获取AIHelper并通过其管理信息
+
+	//2：获取AIHelper并通过其管理消息
 	manager := aihelper.GetGlobalManager()
 	config := map[string]interface{}{
-		"apiKey": config.GetConfig().AIModel.ApiKey, // TODO: 从配置中获取
+		"apiKey":   os.Getenv("OPENAI_API_KEY"), // TODO: 从配置中获取
+		"username": userName,                    // 用于 RAG 模型获取用户文档
 	}
-	// 创建AIHelper
-	helper, err := manager.GetOrCreateAIHelper(userName, createSession.ID, modelType, config)
+	helper, err := manager.GetOrCreateAIHelper(userName, createdSession.ID, modelType, config)
 	if err != nil {
 		log.Println("CreateSessionAndSendMessage GetOrCreateAIHelper error:", err)
 		return "", "", code.AIModelFail
 	}
 
-	// 生成AI回复
-	aiResponse, err := helper.GenerateResponse(userName, ctx, userQuestion)
-	if err != nil {
-		log.Println("CreateSessionAndSendMessage GenerateResponse error:", err)
+	//3：生成AI回复
+	aiResponse, err_ := helper.GenerateResponse(userName, ctx, userQuestion)
+	if err_ != nil {
+		log.Println("CreateSessionAndSendMessage GenerateResponse error:", err_)
 		return "", "", code.AIModelFail
 	}
-	return createSession.ID, aiResponse.Content, code.CodeSuccess
+
+	return createdSession.ID, aiResponse.Content, code.CodeSuccess
 }
 
-// 创建流式会话，不发送消息
 func CreateStreamSessionOnly(userName string, userQuestion string) (string, code.Code) {
 	newSession := &model.Session{
 		ID:       uuid.New().String(),
@@ -79,7 +83,6 @@ func CreateStreamSessionOnly(userName string, userQuestion string) (string, code
 	return createdSession.ID, code.CodeSuccess
 }
 
-// 流式会话发送消息
 func StreamMessageToExistingSession(userName string, sessionID string, userQuestion string, modelType string, writer http.ResponseWriter) code.Code {
 	// 确保 writer 支持 Flush
 	flusher, ok := writer.(http.Flusher)
@@ -89,8 +92,22 @@ func StreamMessageToExistingSession(userName string, sessionID string, userQuest
 	}
 
 	manager := aihelper.GetGlobalManager()
-	config := map[string]interface{}{
-		"apiKey": config.GetConfig().AIModel.ApiKey, // TODO: 从配置中获取
+	config := make(map[string]interface{})
+	config["username"] = userName // 所有模型都需要的用户名（RAG/MCP 用）
+	switch modelType {
+	case "1": // OpenAI
+		config["apiKey"] = os.Getenv("OPENAI_API_KEY")
+	case "2": // 阿里百炼 RAG
+		config["apiKey"] = os.Getenv("RAG_API_KEY")
+	case "3": // MCP
+		config["apiKey"] = os.Getenv("MCP_API_KEY")
+	case "4": // Ollama
+		config["baseURL"] = os.Getenv("OLLAMA_BASE_URL")
+		// modelName 需由前端/业务传入，或默认值
+		config["modelName"] = os.Getenv("OLLAMA_MODEL_NAME") // 示例默认值
+	default:
+		log.Println("unknown modelType:", modelType)
+		return code.AIModelFail
 	}
 	helper, err := manager.GetOrCreateAIHelper(userName, sessionID, modelType, config)
 	if err != nil {
@@ -127,7 +144,6 @@ func StreamMessageToExistingSession(userName string, sessionID string, userQuest
 	return code.CodeSuccess
 }
 
-// 创建流式会话并发送消息
 func CreateStreamSessionAndSendMessage(userName string, userQuestion string, modelType string, writer http.ResponseWriter) (string, code.Code) {
 
 	sessionID, code_ := CreateStreamSessionOnly(userName, userQuestion)
@@ -143,16 +159,19 @@ func CreateStreamSessionAndSendMessage(userName string, userQuestion string, mod
 
 	return sessionID, code.CodeSuccess
 }
-func ChatSend(userName, sessionID, userQuestion, modelType string) (string, code.Code) {
+
+func ChatSend(userName string, sessionID string, userQuestion string, modelType string) (string, code.Code) {
+	//1：获取AIHelper
 	manager := aihelper.GetGlobalManager()
 	config := map[string]interface{}{
-		"apiKey": config.GetConfig().AIModel.ApiKey, // TODO: 从配置中获取
+		"username": userName, // 用于 RAG 模型获取用户文档（若当前用户选择了RAG模型，该字段将会被用到）
 	}
 	helper, err := manager.GetOrCreateAIHelper(userName, sessionID, modelType, config)
 	if err != nil {
 		log.Println("ChatSend GetOrCreateAIHelper error:", err)
 		return "", code.AIModelFail
 	}
+
 	//2：生成AI回复
 	aiResponse, err_ := helper.GenerateResponse(userName, ctx, userQuestion)
 	if err_ != nil {
@@ -161,7 +180,18 @@ func ChatSend(userName, sessionID, userQuestion, modelType string) (string, code
 	}
 
 	return aiResponse.Content, code.CodeSuccess
+}
+func DeleteSession(userName string, sessionID string) code.Code {
+	// 删除AIHelper中的消息历史
+	manager := aihelper.GetGlobalManager()
+	// _, exists := manager.GetAIHelper(userName, sessionID)
+	// if !exists {
+	// 	return code.CodeServerBusy
 
+	// }
+
+	manager.DeleteAIHelper(userName, sessionID)
+	return code.CodeSuccess
 }
 
 func GetChatHistory(userName string, sessionID string) ([]model.History, code.Code) {
@@ -186,6 +216,7 @@ func GetChatHistory(userName string, sessionID string) ([]model.History, code.Co
 
 	return history, code.CodeSuccess
 }
+
 func ChatStreamSend(userName string, sessionID string, userQuestion string, modelType string, writer http.ResponseWriter) code.Code {
 
 	return StreamMessageToExistingSession(userName, sessionID, userQuestion, modelType, writer)

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/mou-he/graduation-design/common/rabbitmq"
+	"github.com/mou-he/graduation-design/common/rag"
 	"github.com/mou-he/graduation-design/model"
 	"github.com/mou-he/graduation-design/utils"
 )
@@ -16,6 +17,8 @@ type AIHelper struct {
 	mu        sync.RWMutex                                 // 读写锁，保护消息历史并发访问
 	SessionID string                                       // 会话唯一标识，用于绑定消息和上下文
 	saveFunc  func(*model.Message) (*model.Message, error) // 消息存储回调函数，默认异步发布到RabbitMQ
+	ragQuery  *rag.RAGQuery                                // 新增：RAG查询器（复用，避免重复初始化）
+
 }
 
 func NewAIHelper(model_ AIModel, SessionID string) *AIHelper {

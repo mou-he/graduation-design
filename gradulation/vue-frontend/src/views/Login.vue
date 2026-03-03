@@ -13,10 +13,7 @@
         label-width="80px"
       >
         <el-form-item label="用户名" prop="username">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
-          />
+          <el-input v-model="loginForm.username" placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input
@@ -36,25 +33,23 @@
             登录
           </el-button>
         </el-form-item>
+        <!-- 修改后的链接区域 -->
         <el-form-item>
-          <el-button
-            type="text"
-            @click="$router.push('/register')"
-            style="width: 100%"
-          >
-            还没有账号？去注册
-          </el-button>
+          <div style="display: flex; justify-content: space-between; width: 100%;">
+            <el-button type="text" @click="$router.push('/reset-password')">找回密码</el-button>
+            <el-button type="text" @click="$router.push('/register')">还没有账号？去注册</el-button>
+          </div>
         </el-form-item>
       </el-form>
     </el-card>
   </div>
 </template>
-
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '../utils/api'
+import { jwtDecode } from 'jwt-decode'
 
 export default {
   name: 'LoginView',
@@ -81,13 +76,25 @@ export default {
       try {
         await loginFormRef.value.validate()
         loading.value = true
+
         const response = await api.post('/user/login', {
           username: loginForm.value.username,
           password: loginForm.value.password
         })
         if (response.data.status_code === 1000) {
-          localStorage.setItem('token', response.data.token)
+          const token=response.data.token
+          const decodedToken = jwtDecode(response.data.token)
+          
+          // 设置本地token
+          localStorage.setItem('token', token)
+          // 设置本地用户信息
+          localStorage.setItem('userInfo', JSON.stringify({
+          userId: decodedToken.id,
+          username: decodedToken.username
+          }))
           ElMessage.success('登录成功')
+
+
           router.push('/menu')
         } else {
           ElMessage.error(response.data.status_msg || '登录失败')

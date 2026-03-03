@@ -10,5 +10,6 @@ func RegisterUserRouter(r *gin.RouterGroup) {
 		r.POST("/register", usercontroller.Register)
 		r.POST("/login", usercontroller.Login)
 		r.POST("/captcha", usercontroller.Captcha)
+		r.POST("/reset-password", usercontroller.ResetPassword)
 	}
 }

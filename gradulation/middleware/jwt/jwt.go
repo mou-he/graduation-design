@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -20,6 +21,7 @@ func Auth() gin.HandlerFunc {
 			token = strings.TrimPrefix(auth, "Bearer ")
 		}
 		if token == "" {
+			fmt.Println("Authorization header is empty")
 			c.JSON(http.StatusOK, res.CodeOf(code.CodeInvalidToken))
 			c.Abort()
 			return
@@ -27,6 +29,7 @@ func Auth() gin.HandlerFunc {
 		log.Println("token is", token)
 		userName, ok := myjwt.ParseToken(token)
 		if !ok {
+			fmt.Println("ParseToken failed")
 			c.JSON(http.StatusOK, res.CodeOf(code.CodeInvalidToken))
 			c.Abort()
 			return
@@ -34,5 +37,4 @@ func Auth() gin.HandlerFunc {
 		c.Set("username", userName)
 		c.Next()
 	}
-
 }

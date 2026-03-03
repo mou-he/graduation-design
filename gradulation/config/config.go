@@ -47,35 +47,48 @@ type Rabbitmq struct {
 	RabbitmqPassword string `toml:"password"`
 	RabbitmqVhost    string `toml:"vhost"`
 }
-type AIModel struct {
-	ApiKey    string `toml:"apiKey"`
-	ModelType string `toml:"modelType" default:"gpt-3.5-turbo"`
+
+type RagModelConfig struct {
+	RagEmbeddingModel string `toml:"embeddingModel"`
+	RagChatModelName  string `toml:"chatModelName"`
+	RagDocDir         string `toml:"docDir"`
+	RagBaseUrl        string `toml:"baseUrl"`
+	RagDimension      int    `toml:"dimension"`
+}
+
+type VoiceServiceConfig struct {
+	VoiceServiceApiKey    string `toml:"voiceServiceApiKey"`
+	VoiceServiceSecretKey string `toml:"voiceServiceSecretKey"`
 }
 
 type Config struct {
-	EmailConfig `toml:"emailConfig"`
-	RedisConfig `toml:"redisConfig"`
-	MysqlConfig `toml:"mysqlConfig"`
-	JwtConfig   `toml:"jwtConfig"`
-	MainConfig  `toml:"mainConfig"`
-	Rabbitmq    `toml:"rabbitmqConfig"`
-	AIModel     `toml:"aiModel"`
+	EmailConfig        `toml:"emailConfig"`
+	RedisConfig        `toml:"redisConfig"`
+	MysqlConfig        `toml:"mysqlConfig"`
+	JwtConfig          `toml:"jwtConfig"`
+	MainConfig         `toml:"mainConfig"`
+	Rabbitmq           `toml:"rabbitmqConfig"`
+	RagModelConfig     `toml:"ragModelConfig"`
+	VoiceServiceConfig `toml:"voiceServiceConfig"`
 }
 
-// 定义Redis键的配置
 type RedisKeyConfig struct {
-	CaptchaPrefix string
+	CaptchaPrefix   string
+	IndexName       string
+	IndexNamePrefix string
 }
 
-// 默认的Redis键配置
 var DefaultRedisKeyConfig = RedisKeyConfig{
-	CaptchaPrefix: "captcha:%s",
+	CaptchaPrefix:   "captcha:%s",
+	IndexName:       "rag_docs:%s:idx",
+	IndexNamePrefix: "rag_docs:%s:",
 }
 
 var config *Config
 
+// InitConfig 初始化项目配置
 func InitConfig() error {
-	// 初始化配置
+	// 设置配置文件路径（相对于 main.go 所在的目录）
 	if _, err := toml.DecodeFile("config/config.toml", config); err != nil {
 		log.Fatal(err.Error())
 		return err
@@ -83,7 +96,6 @@ func InitConfig() error {
 	return nil
 }
 
-// 获取配置
 func GetConfig() *Config {
 	if config == nil {
 		config = new(Config)

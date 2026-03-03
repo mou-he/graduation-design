@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	CodeMsg     = "HaiAI验证码如下(验证码仅限3分钟有效)"
-	UserNameMsg = "GopherAI的账号如下，请保留好，后续可以用账号/邮箱登录 "
+	CodeMsg               = "HaiAI验证码如下(验证码仅限3分钟有效)"
+	UserNameMsg           = "HaiAI的账号如下，请保留好，后续可以用账号/邮箱登录 "
+	ForgetPasswordCodeMsg = "HaiAI忘记密码验证码如下(验证码仅限3分钟有效)"
 )
 
 func SendCaptcha(email, code, msg string) error {

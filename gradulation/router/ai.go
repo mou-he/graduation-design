@@ -6,7 +6,6 @@ import (
 )
 
 func AIRouter(r *gin.RouterGroup) {
-
 	// 聊天相关接口
 	{
 		r.GET("/chat/sessions", session.GetUserSessionsByUserName)
@@ -16,6 +15,6 @@ func AIRouter(r *gin.RouterGroup) {
 		// r.POST("/chat/tts", AI.ChatSpeech)                  // ChatSpeechHandler
 		r.POST("/chat/send-stream-new-session", session.CreateStreamSessionAndSendMessage)
 		r.POST("/chat/send-stream", session.ChatStreamSend)
+		r.DELETE("/chat/delete-session", session.DeleteSession)
 	}
-
 }

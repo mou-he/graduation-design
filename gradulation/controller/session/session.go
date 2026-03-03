@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mou-he/graduation-design/common/code"
+	"github.com/mou-he/graduation-design/common/rabbitmq"
 	"github.com/mou-he/graduation-design/controller"
 	dao "github.com/mou-he/graduation-design/dao/session"
 	"github.com/mou-he/graduation-design/model"
@@ -44,6 +46,13 @@ type (
 	}
 	ChatHistoryResponse struct {
 		History []model.History `json:"history"`
+		controller.Response
+	}
+	DeleteSessionRequest struct {
+		UserName  string `json:"user_name"`                     // 用户名
+		SessionID string `json:"session_id" binding:"required"` // 会话ID
+	}
+	DeleteSessionResponse struct {
 		controller.Response
 	}
 )
@@ -124,6 +133,39 @@ func ChatSend(c *gin.Context) {
 	}
 	res.Success()
 	res.AiInformation = aiInformation
+	c.JSON(http.StatusOK, res)
+}
+
+func DeleteSession(c *gin.Context) {
+	req := new(DeleteSessionRequest)
+	res := new(DeleteSessionResponse)
+	userName := c.GetString("username")
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, res.CodeOf(code.CodeInvalidParams))
+		return
+	}
+	deleteReq := &DeleteSessionRequest{
+		SessionID: req.SessionID,
+		UserName:  userName,
+	}
+	msgBytes, err := json.Marshal(deleteReq)
+	if err != nil {
+		c.JSON(http.StatusOK, res.CodeOf(code.CodeServerBusy))
+		return
+	}
+
+	// 删除缓存会话
+	code_ := session.DeleteSession(userName, req.SessionID)
+	// 发送到消息队列 删除数据库会话
+	if err := rabbitmq.RMQDeleteSession.Publish(msgBytes); err != nil {
+		c.JSON(http.StatusOK, res.CodeOf(code.CodeServerBusy))
+		return
+	}
+	if code_ != code.CodeSuccess {
+		c.JSON(http.StatusOK, res.CodeOf(code_))
+		return
+	}
+	res.Success()
 	c.JSON(http.StatusOK, res)
 }
 

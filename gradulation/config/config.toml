@@ -36,3 +36,14 @@ charset =  "utf8mb4"
 
 [aiModel]
 apiKey="sk-6e277f0001ca4714b3f96125b5e3910c"
+ragKey="sk-97ffa234a0724d1190c5dae2a6b287ec"
+
+[ragModelConfig]
+  embeddingModel= "text-embedding-v4"
+  chatModelName="qwen-turbo"
+  docDir = "./docs"
+  baseUrl="https://dashscope.aliyuncs.com/compatible-mode/v1"
+  dimension=1024
+
+
+  
